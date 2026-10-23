@@ -4,6 +4,13 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, shell, nativeTheme } = requir
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
+const os = require('node:os');
+
+// The smoke test gets its own settings so it neither depends on nor
+// overwrites the user's (a saved Preview view hides the editor it types into).
+if (process.env.MRKDWN_SMOKE) {
+  app.setPath('userData', path.join(os.tmpdir(), `mrkdwn-smoke-${process.pid}`));
+}
 
 const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 const DEFAULT_SETTINGS = {
