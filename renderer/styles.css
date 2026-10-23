@@ -1,0 +1,733 @@
+/* ==========================================================================
+   mrkdwn — minimal markdown editor
+   Tokens are defined once on :root (light), then overridden for dark.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg:            #ffffff;
+  --bg-sunken:     #fafafa;
+  --bg-raised:     #ffffff;
+  --bg-chrome:     #f7f7f8;
+  --bg-hover:      #ecedef;
+  --bg-active:     #e2e3e6;
+
+  --text:          #1a1c1f;
+  --text-muted:    #6b7280;
+  --text-faint:    #9ca3af;
+
+  --border:        #e4e5e8;
+  --border-strong: #d1d3d8;
+
+  --accent:        #3b6ef5;
+  --accent-soft:   #eaf0fe;
+  --accent-text:   #ffffff;
+
+  --code-bg:       #f4f4f6;
+  --code-text:     #b4285e;
+  --quote-bar:     #d8dade;
+
+  --shadow:        0 1px 2px rgba(16, 18, 22, .06), 0 8px 24px rgba(16, 18, 22, .08);
+
+  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --font-read: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+
+  --titlebar-h: 38px;
+  --toolbar-h:  42px;
+  --status-h:   26px;
+  --help-w:     360px;
+
+  --split: 50%;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:            #16171a;
+  --bg-sunken:     #121316;
+  --bg-raised:     #1c1e22;
+  --bg-chrome:     #1b1c20;
+  --bg-hover:      #26282d;
+  --bg-active:     #303237;
+
+  --text:          #e8e9ec;
+  --text-muted:    #9aa0aa;
+  --text-faint:    #6b7280;
+
+  --border:        #2a2c31;
+  --border-strong: #3a3d43;
+
+  --accent:        #5b8cff;
+  --accent-soft:   #1e2740;
+  --accent-text:   #0d1117;
+
+  --code-bg:       #24262b;
+  --code-text:     #ff9ec4;
+  --quote-bar:     #3a3d43;
+
+  --shadow:        0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  grid-template-rows: var(--titlebar-h) var(--toolbar-h) 1fr var(--status-h);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+[hidden] { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   Titlebar
+   -------------------------------------------------------------------------- */
+
+.titlebar {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+/* File buttons, shown only in the browser build (web-api.js adds html.web). */
+.web-only { display: none; }
+
+html.web .titlebar {
+  -webkit-app-region: no-drag;
+  position: relative;
+}
+
+html.web .titlebar-actions {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.titlebar-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  max-width: 60%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar
+   -------------------------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  user-select: none;
+}
+.toolbar::-webkit-scrollbar { display: none; }
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.tool-group.right { margin-left: auto; gap: 8px; }
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 5px;
+  flex: none;
+}
+
+.tool {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s ease, color .12s ease;
+}
+.tool:hover  { background: var(--bg-hover); color: var(--text); }
+.tool:active { background: var(--bg-active); }
+.tool code   { font-family: var(--font-mono); font-size: 11px; }
+
+.help-btn.active,
+.theme-btn.active { background: var(--accent-soft); color: var(--accent); }
+
+.theme-btn { font-size: 14px; }
+
+.segmented {
+  display: flex;
+  background: var(--bg-hover);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+}
+.segmented button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button.active {
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+}
+
+/* --------------------------------------------------------------------------
+   Workspace
+   -------------------------------------------------------------------------- */
+
+.workspace {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Editor + preview live in their own flex row so the split percentage is
+   measured against them alone, not against the help panel too. */
+.panes {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pane {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.editor-pane  { flex: 0 0 var(--split); background: var(--bg); }
+.preview-pane { flex: 1 1 auto; background: var(--bg-sunken); border-left: 1px solid var(--border); }
+
+/* View modes */
+.workspace[data-view="edit"]    .preview-pane,
+.workspace[data-view="edit"]    .splitter,
+.workspace[data-view="preview"] .editor-pane,
+.workspace[data-view="preview"] .splitter { display: none; }
+
+.workspace[data-view="edit"]    .editor-pane  { flex: 1 1 auto; }
+.workspace[data-view="preview"] .preview-pane { border-left: 0; }
+
+/* Reading mode: centre the column, and drop the tall scroll runway that only
+   exists so the two panes can stay aligned while scrolling together. */
+.workspace[data-view="preview"] .markdown-body {
+  margin-inline: auto;
+  padding-bottom: 12vh;
+}
+
+.splitter {
+  flex: none;
+  width: 5px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 2;
+}
+.splitter:hover, .splitter.dragging { background: var(--accent); opacity: .35; }
+
+/* Editor */
+#editor {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.75;
+  padding: 26px 30px 45vh;
+  tab-size: 2;
+  caret-color: var(--accent);
+}
+#editor::placeholder { color: var(--text-faint); }
+
+/* --------------------------------------------------------------------------
+   Preview / rendered markdown
+   -------------------------------------------------------------------------- */
+
+.markdown-body {
+  font-family: var(--font-read);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--text);
+  padding: 26px 34px 45vh;
+  max-width: 78ch;
+  overflow-wrap: break-word;
+}
+
+.markdown-body > :first-child { margin-top: 0; }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  line-height: 1.3;
+  margin: 1.7em 0 .6em;
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.markdown-body h1 { font-size: 1.85em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+.markdown-body h2 { font-size: 1.42em; padding-bottom: .25em; border-bottom: 1px solid var(--border); }
+.markdown-body h3 { font-size: 1.18em; }
+.markdown-body h4 { font-size: 1.02em; }
+.markdown-body h5 { font-size: .93em; color: var(--text-muted); }
+.markdown-body h6 { font-size: .87em; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+
+.markdown-body p { margin: 0 0 1em; }
+
+.markdown-body a { color: var(--accent); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+
+.markdown-body strong { font-weight: 650; }
+
+.markdown-body ul,
+.markdown-body ol { margin: 0 0 1em; padding-left: 1.5em; }
+.markdown-body li { margin: .25em 0; }
+.markdown-body li > ul,
+.markdown-body li > ol { margin: .25em 0; }
+
+.markdown-body li.task-item { list-style: none; margin-left: -1.35em; }
+.markdown-body li.task-item input {
+  margin-right: .5em;
+  vertical-align: -1px;
+  accent-color: var(--accent);
+}
+
+.markdown-body blockquote {
+  margin: 0 0 1em;
+  padding: .1em 0 .1em 1em;
+  border-left: 3px solid var(--quote-bar);
+  color: var(--text-muted);
+}
+.markdown-body blockquote > :last-child { margin-bottom: 0; }
+
+.markdown-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: .87em;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: .16em .4em;
+  border-radius: 4px;
+}
+
+.markdown-body pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+.markdown-body pre code {
+  background: none;
+  color: var(--text);
+  padding: 0;
+  font-size: .85em;
+  line-height: 1.6;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 0 0 1em;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  text-align: left;
+}
+.markdown-body th { background: var(--bg-chrome); font-weight: 600; }
+
+.markdown-body img { max-width: 100%; border-radius: 6px; }
+
+.markdown-body kbd {
+  font-family: var(--font-mono);
+  font-size: .82em;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: .1em .4em;
+}
+
+/* --------------------------------------------------------------------------
+   Help panel
+   -------------------------------------------------------------------------- */
+
+.help-panel {
+  flex: none;
+  width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-chrome);
+  overflow: hidden;
+  transition: width .18s cubic-bezier(.4, 0, .2, 1);
+}
+/* Border lives on .open so a closed panel leaves no 1px seam. */
+.help-panel.open {
+  width: var(--help-w);
+  border-left: 1px solid var(--border);
+}
+
+.help-header {
+  flex: none;
+  padding: 12px 14px 0;
+  border-bottom: 1px solid var(--border);
+  min-width: var(--help-w);
+}
+
+.help-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.help-title h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+
+.icon-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+#help-search {
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  outline: 0;
+}
+#help-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+#help-search::placeholder { color: var(--text-faint); }
+
+/* Wraps rather than scrolls, so every category stays discoverable. */
+.help-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 2px;
+  padding: 9px 0 2px;
+}
+
+.help-tabs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .12s ease, border-color .12s ease;
+}
+.help-tabs button:hover { color: var(--text); }
+.help-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.help-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px 24px;
+  min-width: var(--help-w);
+}
+
+.help-empty {
+  color: var(--text-faint);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 30px 10px;
+}
+
+.help-group-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+  margin: 14px 0 8px;
+}
+.help-group-title:first-child { margin-top: 0; }
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.card-head:hover { background: var(--bg-hover); }
+
+.card-name { font-size: 12.5px; font-weight: 550; }
+
+.card-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+
+.insert-btn {
+  appearance: none;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 550;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.insert-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.chevron {
+  color: var(--text-faint);
+  font-size: 9px;
+  transition: transform .15s ease;
+  width: 10px;
+  text-align: center;
+}
+.card.open .chevron { transform: rotate(90deg); }
+
+.card-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 10px;
+}
+.card.open .card-body { display: block; }
+
+.label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.syntax {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 0 0 10px;
+  color: var(--text);
+  overflow-x: auto;
+}
+
+.rendered {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+/* Rendered sample is a miniature: shrink block spacing so it stays compact. */
+.rendered > :first-child { margin-top: 0; }
+.rendered > :last-child  { margin-bottom: 0; }
+.rendered h1 { font-size: 1.35em; border: 0; padding: 0; margin: .2em 0 .3em; }
+.rendered h2 { font-size: 1.2em;  border: 0; padding: 0; margin: .2em 0 .3em; }
+.rendered h3 { font-size: 1.08em; margin: .2em 0 .3em; }
+.rendered p, .rendered ul, .rendered ol, .rendered pre, .rendered blockquote, .rendered table { margin: .4em 0; }
+.rendered hr { margin: .7em 0; }
+
+.tip {
+  display: flex;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border);
+}
+.tip::before { content: "💡"; flex: none; font-size: 11px; }
+.tip code {
+  font-family: var(--font-mono);
+  font-size: .9em;
+  background: var(--code-bg);
+  color: var(--text);
+  padding: .1em .35em;
+  border-radius: 3px;
+}
+.tip strong { color: var(--text); font-weight: 600; }
+
+.help-footer {
+  flex: none;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+  min-width: var(--help-w);
+}
+.help-footer b { color: var(--text-muted); font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   Status bar
+   -------------------------------------------------------------------------- */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 12px;
+  background: var(--bg-chrome);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.status-path {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.status-right { display: flex; gap: 14px; flex: none; }
+
+/* --------------------------------------------------------------------------
+   Toast
+   -------------------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--status-h) + 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 50;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* --------------------------------------------------------------------------
+   Scrollbars
+   -------------------------------------------------------------------------- */
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*:hover::-webkit-scrollbar-thumb { background: var(--border-strong); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); background-clip: content-box; }

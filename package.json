@@ -1,0 +1,19 @@
+{
+  "name": "mrkdwn",
+  "version": "1.0.0",
+  "description": "A minimal markdown editor with a built-in visual help panel.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "MRKDWN_SMOKE=/tmp/mrkdwn-smoke.png electron .",
+    "vendor": "cp node_modules/markdown-it/dist/markdown-it.min.js renderer/vendor/"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0"
+  }
+}

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: https:; font-src 'self';" />
+  <title>mrkdwn</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Drag region / document title -->
+  <header class="titlebar" id="titlebar">
+    <!-- File commands for the web build; the desktop app has a real menu -->
+    <div class="titlebar-actions web-only">
+      <button class="tool" data-menu="menu:new" title="New document">New</button>
+      <button class="tool" data-menu="menu:open" title="Open… (⌘O)">Open</button>
+      <button class="tool" data-menu="menu:save" title="Save (⌘S)">Save</button>
+      <button class="tool" data-menu="menu:export-html" title="Export HTML (⌘E)">Export</button>
+    </div>
+    <div class="titlebar-name">
+      <span id="doc-name">Untitled.md</span>
+      <span class="dot" id="dirty-dot" hidden title="Unsaved changes"></span>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="tool-group" id="format-tools">
+      <button class="tool" data-format="h1" title="Heading 1 (⌘⌥1)"><b>H1</b></button>
+      <button class="tool" data-format="h2" title="Heading 2 (⌘⌥2)"><b>H2</b></button>
+      <button class="tool" data-format="h3" title="Heading 3 (⌘⌥3)"><b>H3</b></button>
+      <span class="divider"></span>
+      <button class="tool" data-format="bold" title="Bold (⌘B)"><b>B</b></button>
+      <button class="tool" data-format="italic" title="Italic (⌘I)"><i>I</i></button>
+      <button class="tool" data-format="strike" title="Strikethrough (⌘⇧X)"><s>S</s></button>
+      <button class="tool" data-format="code" title="Inline code (⌘⇧C)"><code>&lt;/&gt;</code></button>
+      <span class="divider"></span>
+      <button class="tool" data-format="link" title="Link (⌘K)">Link</button>
+      <button class="tool" data-format="image" title="Image">Image</button>
+      <span class="divider"></span>
+      <button class="tool" data-format="ul" title="Bulleted list (⌘⇧8)">• List</button>
+      <button class="tool" data-format="ol" title="Numbered list (⌘⇧7)">1. List</button>
+      <button class="tool" data-format="task" title="Task list (⌘⇧9)">☑ Task</button>
+      <span class="divider"></span>
+      <button class="tool" data-format="quote" title="Blockquote (⌘⇧')">&ldquo;</button>
+      <button class="tool" data-format="codeblock" title="Code block">{ }</button>
+      <button class="tool" data-format="table" title="Table">Table</button>
+      <button class="tool" data-format="hr" title="Horizontal rule">&mdash;</button>
+    </div>
+
+    <div class="tool-group right">
+      <div class="segmented" id="view-toggle" role="group" aria-label="View mode">
+        <button data-view="edit" title="Editor only (⌘1)">Edit</button>
+        <button data-view="split" title="Split (⌘2)">Split</button>
+        <button data-view="preview" title="Preview only (⌘3)">Preview</button>
+      </div>
+      <button class="tool theme-btn" id="theme-btn" title="Toggle theme (⌘⇧D)">◐</button>
+      <button class="tool help-btn" id="help-btn" title="Markdown help (⌘/)">? Help</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main class="workspace" id="workspace" data-view="split">
+    <div class="panes" id="panes">
+      <section class="pane editor-pane" id="editor-pane">
+        <textarea id="editor"
+                  spellcheck="true"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  placeholder="# Start writing&#10;&#10;Press ⌘/ to open the Markdown help panel."></textarea>
+      </section>
+
+      <div class="splitter" id="splitter" title="Drag to resize"></div>
+
+      <section class="pane preview-pane" id="preview-pane">
+        <article class="markdown-body" id="preview"></article>
+      </section>
+    </div>
+
+    <!-- Visual help panel -->
+    <aside class="help-panel" id="help-panel" aria-label="Markdown help">
+      <div class="help-header">
+        <div class="help-title">
+          <h2>Markdown Help</h2>
+          <button class="icon-btn" id="help-close" title="Close (⌘/)">✕</button>
+        </div>
+        <input type="search" id="help-search" placeholder="Search syntax…" autocomplete="off" spellcheck="false" />
+        <nav class="help-tabs" id="help-tabs"></nav>
+      </div>
+      <div class="help-body" id="help-body"></div>
+      <div class="help-footer">
+        <span>Click <b>Insert</b> to drop syntax into your document.</span>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Status bar -->
+  <footer class="statusbar">
+    <span id="status-path" class="status-path" title="">No file — unsaved</span>
+    <span class="status-right">
+      <span id="stat-words">0 words</span>
+      <span id="stat-chars">0 characters</span>
+      <span id="stat-lines">1 line</span>
+      <span id="stat-read">0 min read</span>
+    </span>
+  </footer>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="vendor/markdown-it.min.js"></script>
+  <script src="web-api.js"></script>
+  <script src="help-data.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
